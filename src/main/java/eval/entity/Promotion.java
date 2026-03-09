@@ -8,11 +8,13 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import java.util.List;
 @Entity
-
+@Getter @Setter
 public class Promotion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
