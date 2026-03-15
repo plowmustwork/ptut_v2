@@ -1,5 +1,5 @@
-INSERT INTO enseignant (mail, nom, prenom) VALUES 
-('testing@univ.fr', 'Doe', 'John');
+INSERT INTO enseignant (mail, nom, prenom, mot_de_passe) VALUES 
+('testing@univ.fr', 'Doe', 'John', 'hashed_password_1');
 
 INSERT INTO etudiant (mail, nom, prenom) VALUES 
 ('student1@univ.fr', 'Smith', 'Jane'),
