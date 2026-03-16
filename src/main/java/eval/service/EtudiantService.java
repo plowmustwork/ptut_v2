@@ -32,47 +32,55 @@ public class EtudiantService {
         etudiant.setNom(etudiantDTO.getNom());
         etudiant.setPrenom(etudiantDTO.getPrenom());
         etudiant.setMail(etudiantDTO.getMail());
+        etudiant.setLv2(etudiantDTO.getLv2());
+        if (etudiantDTO.getPromotionId() != null) {
+            promotionRepository.findById(etudiantDTO.getPromotionId())
+                .ifPresent(etudiant::setPromotion);
+        }
         etudiantRepository.save(etudiant);
         return etudiantDTO;
     }
 
-    
     public void importEtudiantsFromExcel(MultipartFile file) {
         try (InputStream inputStream = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(inputStream)) {
-    
-            Sheet sheet = workbook.getSheetAt(0);
-    
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) { 
-                Row row = sheet.getRow(i);
-    
-                if (row == null) continue;
-                Cell cell = row.getCell(3);
 
-                if (cell == null) {
-                    continue; 
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                // Colonnes : 0=id, 1=mail, 2=nom, 3=prenom, 4=promotion_id, 5=lv2
+                Cell mailCell = row.getCell(1);
+                Cell nomCell  = row.getCell(2);
+                Cell prenomCell = row.getCell(3);
+                if (mailCell == null || nomCell == null || prenomCell == null) continue;
+
+                Etudiant etudiant = new Etudiant();
+                etudiant.setMail(mailCell.getStringCellValue());
+                etudiant.setNom(nomCell.getStringCellValue());
+                etudiant.setPrenom(prenomCell.getStringCellValue());
+
+                // promotion_id (colonne 4) — numérique
+                Cell promotionCell = row.getCell(4);
+                if (promotionCell != null && promotionCell.getCellType() == CellType.NUMERIC) {
+                    Long promotionId = (long) promotionCell.getNumericCellValue();
+                    promotionRepository.findById(promotionId)
+                        .ifPresent(etudiant::setPromotion);
                 }
 
-                String promotionNom = cell.getStringCellValue();
-                Promotion promotion = promotionRepository
-                    .findByNomPromotion(promotionNom)
-                    .orElseGet(() -> {
-                        Promotion p = new Promotion();
-                        p.setNomPromotion(promotionNom);
-                        return promotionRepository.save(p);
-                    });
-                Etudiant etudiant = new Etudiant();
-    
-                etudiant.setNom(row.getCell(0).getStringCellValue());
-                etudiant.setPrenom(row.getCell(1).getStringCellValue());
-                etudiant.setMail(row.getCell(2).getStringCellValue());
-                etudiant.setPromotion(promotion);
+                // lv2 (colonne 5)
+                Cell lv2Cell = row.getCell(5);
+                if (lv2Cell != null) {
+                    etudiant.setLv2(lv2Cell.getStringCellValue());
+                }
+
                 etudiantRepository.save(etudiant);
             }
-    
+
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de l'importation du fichier Excel", e);
         }
     }
-
 }

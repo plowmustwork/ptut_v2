@@ -31,7 +31,7 @@ public class Etudiant {
     private List<Participation> participations;
 
     @NotNull
-    private Langue lv2;
+    private String lv2;
 
     /*
     @ManyToMany
