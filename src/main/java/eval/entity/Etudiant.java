@@ -30,6 +30,9 @@ public class Etudiant {
     @OneToMany(mappedBy = "etudiant")
     private List<Participation> participations;
 
+    @NotNull
+    private Langue lv2;
+
     /*
     @ManyToMany
     @JoinTable(

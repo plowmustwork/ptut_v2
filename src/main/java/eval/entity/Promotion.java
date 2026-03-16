@@ -23,8 +23,6 @@ public class Promotion {
 
     @NotNull
     private String nomPromotion;
-    
-
 
     @OneToMany(mappedBy = "promotion")
     private List<Etudiant> listeEtudiants;
