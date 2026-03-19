@@ -13,7 +13,7 @@ import java.util.List;
 public class Semestre {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String idSemestre;
+    private Long idSemestre;
 
     @ManyToOne
     @JoinColumn(name = "promotion_id")  

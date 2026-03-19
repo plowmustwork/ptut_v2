@@ -11,7 +11,7 @@ public class Ue {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ue_id")
-    private String idUE;
+    private Long idUE;
 
     @NotNull
     private String libelle;

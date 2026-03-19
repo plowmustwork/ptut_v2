@@ -24,7 +24,7 @@ public class Etudiant {
     private String prenom;
 
     @ManyToOne
-    @JoinColumn(name = "promotion_id")  
+    @JoinColumn(name = "promotion_nom_promotion")  
     private Promotion promotion;
 
     @OneToMany(mappedBy = "etudiant")
