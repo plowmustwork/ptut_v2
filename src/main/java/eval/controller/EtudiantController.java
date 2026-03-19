@@ -6,6 +6,8 @@ import org.springframework.web.multipart.MultipartFile;
 import eval.dto.EtudiantDTO;
 import eval.service.EtudiantService;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 
@@ -36,5 +38,14 @@ public class EtudiantController {
     public ResponseEntity<String> importExcel(@RequestParam("file") MultipartFile file) {
         etudiantService.importEtudiantsFromExcel(file);
         return ResponseEntity.ok("Importation réussie !");
+    }
+
+    @GetMapping("/rechercher")
+    public ResponseEntity<List<EtudiantDTO>> rechercherParPrenom(@RequestParam String prenom) {
+        List<EtudiantDTO> resultats = etudiantService.rechercherParPrenom(prenom);
+        if (resultats.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(resultats);
     }
 }

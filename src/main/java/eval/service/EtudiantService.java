@@ -10,6 +10,9 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import eval.repository.PromotionRepository;
 
 
@@ -19,6 +22,7 @@ public class EtudiantService {
     private EtudiantRepository etudiantRepository;
     @Autowired
     private PromotionRepository promotionRepository;
+
 
     public EtudiantDTO trouverEtudiant(Long id){
         Etudiant etudiant = etudiantRepository.findById(id);
@@ -82,5 +86,16 @@ public class EtudiantService {
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de l'importation du fichier Excel", e);
         }
+    }
+
+    public List<EtudiantDTO> rechercherParPrenom(String prenom) {
+        return etudiantRepository.findByPrenomContainingIgnoreCase(prenom)
+            .stream()
+            .map(e -> {
+                EtudiantDTO dto = new EtudiantDTO();
+                dto.EtudiantMapper(e);
+                return dto;
+            })
+            .collect(Collectors.toList());
     }
 }
