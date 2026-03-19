@@ -1,26 +1,71 @@
 package eval.entity;
-import lombok.*;
+
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import java.util.ArrayList;
 import java.util.List;
 
-
-@Entity@Getter @Setter @ToString
-
+@Entity
+@Table(name = "ue")
 public class Ue {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ue_id")
-    private Long idUE;
+    @Column(name = "id_ue", nullable = false, length = 50)
+    private String idUE;
 
-    @NotNull
-    private String libelle;
+    @Column(nullable = false, length = 255)
+    private String intitule;
 
-    @OneToMany(mappedBy = "ue")
-    private List<Enseignement> listeCours;
+    @OneToMany(mappedBy = "ue", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Enseignement> enseignements = new ArrayList<>();
 
-    @ManyToOne
+        @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "semestre_id")
     private Semestre semestre;
 
+    // ...existing code...
+
+    public Semestre getSemestre() {
+        return semestre;
+    }
+
+    public void setSemestre(Semestre semestre) {
+        this.semestre = semestre;
+    }
+
+    public String getIdUE() {
+        return idUE;
+    }
+
+    public void setIdUE(String idUE) {
+        this.idUE = idUE;
+    }
+
+    public String getIntitule() {
+        return intitule;
+    }
+
+    public void setIntitule(String intitule) {
+        this.intitule = intitule;
+    }
+
+    public List<Enseignement> getEnseignements() {
+        return enseignements;
+    }
+
+    public void setEnseignements(List<Enseignement> enseignements) {
+        this.enseignements.clear();
+        if (enseignements != null) {
+            enseignements.forEach(this::addEnseignement);
+        }
+    }
+
+    public void addEnseignement(Enseignement enseignement) {
+        enseignements.add(enseignement);
+        enseignement.setUe(this);
+    }
+
+    public void removeEnseignement(Enseignement enseignement) {
+        enseignements.remove(enseignement);
+        enseignement.setUe(null);
+    }
 }

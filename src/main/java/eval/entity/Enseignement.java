@@ -1,38 +1,63 @@
 package eval.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-import java.util.*;
-
+import jakarta.persistence.*;
 
 @Entity
-@Getter @Setter @ToString
-
+@Table(name = "enseignement")
 public class Enseignement {
-    @Id
-    @Column(name = "enseignement_id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String idCours;
 
-    @NotNull
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 50)
+    private String code;
+
+    @Column(nullable = false, length = 255)
     private String libelle;
 
-    @ManyToMany(mappedBy = "enseignements")
-    private List<Enseignant> enseignants;
-
-    @ManyToOne
-    @JoinColumn(name = "ue_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "ue_id", nullable = false)
     private Ue ue;
 
-    @ManyToOne
-    @JoinColumn(name="questionnaire_id")
+    // IMPORTANT: requis par Questionnaire.enseignements(mappedBy = "questionnaire")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "questionnaire_id")
     private Questionnaire questionnaire;
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getLibelle() {
+        return libelle;
+    }
+
+    public void setLibelle(String libelle) {
+        this.libelle = libelle;
+    }
+
+    public Ue getUe() {
+        return ue;
+    }
+
+    public void setUe(Ue ue) {
+        this.ue = ue;
+    }
+
+    public Questionnaire getQuestionnaire() {
+        return questionnaire;
+    }
+
+    public void setQuestionnaire(Questionnaire questionnaire) {
+        this.questionnaire = questionnaire;
+    }
 }

@@ -17,8 +17,4 @@ public class EvalApplication {
         SpringApplication.run(EvalApplication.class, args);
     }
 
-    @Bean
-    ModelMapper modelMapper() {
-        return new ModelMapper();
-    }
 }

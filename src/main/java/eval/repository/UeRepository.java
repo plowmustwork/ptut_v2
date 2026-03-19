@@ -1,9 +1,11 @@
 package eval.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.*;
 import eval.entity.Ue;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface UeRepository extends JpaRepository<Ue, Long> {
-    Optional<Ue> findByIdUE(Long idUE);
+import java.util.Optional;
+
+public interface UeRepository extends JpaRepository<Ue, String> {
+    Optional<Ue> findByIdUE(String idUE);
+    boolean existsByIdUE(String idUE);
 }
