@@ -24,7 +24,11 @@ public class UeImportController {
             return ResponseEntity.badRequest().body("Fichier vide");
         }
 
-        ueImportService.importFromExcel(file, nomPromotion, nomSemestre, anneeDebut);
-        return ResponseEntity.ok("Import réussi ✅");
+        try {
+            ueImportService.importFromExcel(file, nomPromotion, nomSemestre, anneeDebut);
+            return ResponseEntity.ok("Import réussi ✅");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur: " + e.getMessage()); // ✅ shows real error
+        }
     }
 }
