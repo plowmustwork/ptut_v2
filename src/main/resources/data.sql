@@ -1,6 +1,12 @@
 
 -- Data for testing
 
+-- Annee
+INSERT INTO annee (date_debut, date_fin) VALUES
+(2023, 2024),
+(2024, 2025),
+(2025, 2026);
+
 -- Promotion
 INSERT INTO promotion (nom_promotion) VALUES 
 ('FIE1'),
@@ -12,11 +18,6 @@ INSERT INTO promotion (nom_promotion) VALUES
 ('FIE5'),
 ('FIA5');
 
--- Annee
-INSERT INTO annee (date_debut, date_fin) VALUES
-(2023, 2024),
-(2024, 2025),
-(2025, 2026);
 
 INSERT INTO annee_promotion (annee_id, promotion_id) VALUES
 (1, 1),
