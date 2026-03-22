@@ -13,10 +13,10 @@ public class Annee {
     private Long idAnnee;
 
     @NonNull
-    private Integer dateDebut;
+    private String anneeDebut;
 
     @NonNull
-    private Integer dateFin;
+    private String anneeFin;
 
     @ManyToMany
     @JoinTable(
@@ -25,4 +25,7 @@ public class Annee {
         inverseJoinColumns = @JoinColumn(name = "promotion_id")
     )
     private List<Promotion> promotions;
+
+    @OneToMany(mappedBy = "annee")
+    private List<InscriptionPromotion> inscriptions;
 }

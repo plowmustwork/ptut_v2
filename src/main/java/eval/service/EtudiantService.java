@@ -1,7 +1,13 @@
 package eval.service;
+
 import eval.dto.EtudiantDTO;
+import eval.entity.Annee;
 import eval.entity.Etudiant;
+import eval.entity.InscriptionPromotion;
+import eval.repository.AnneeRepository;
 import eval.repository.EtudiantRepository;
+import eval.repository.InscriptionPromotionRepository;
+import eval.repository.PromotionRepository;
 import eval.utility.EtudiantMapper;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,42 +15,47 @@ import org.springframework.stereotype.Service;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import eval.repository.PromotionRepository;
-
-
 @Service
 public class EtudiantService {
+
     @Autowired
     private EtudiantRepository etudiantRepository;
     @Autowired
     private PromotionRepository promotionRepository;
     @Autowired
+    private AnneeRepository anneeRepository;
+    @Autowired
+    private InscriptionPromotionRepository inscriptionPromotionRepository;
+    @Autowired
     private EtudiantMapper etudiantMapper;
 
 
-    public EtudiantDTO trouverEtudiant(Long id){
+    public EtudiantDTO trouverEtudiant(Long id) {
         Etudiant etudiant = etudiantRepository.findById(id);
         return etudiantMapper.toDto(etudiant);
     }
 
-    public EtudiantDTO ajouterEtudiant(EtudiantDTO etudiantDTO){
+    public EtudiantDTO ajouterEtudiant(EtudiantDTO etudiantDTO) {
         Etudiant etudiant = new Etudiant();
         etudiant.setNom(etudiantDTO.getNom());
         etudiant.setPrenom(etudiantDTO.getPrenom());
         etudiant.setMail(etudiantDTO.getMail());
         etudiant.setLv2(etudiantDTO.getLv2());
-        lierEtudiantAPromotionParNom(etudiant, etudiantDTO.getPromotionNom());
-        if (etudiant.getPromotion() == null) {
-            lierEtudiantAPromotionParId(etudiant, etudiantDTO.getPromotionId());
-        }
 
         Etudiant savedEtudiant = etudiantRepository.save(etudiant);
+
+        // Try by promotion name first, then by ID
+        boolean linked = lierEtudiantAPromotionParNom(savedEtudiant, etudiantDTO.getPromotionNom(), etudiantDTO.getAnneeDebut());
+        if (!linked) {
+            lierEtudiantAPromotionParId(savedEtudiant, etudiantDTO.getPromotionId(), etudiantDTO.getAnneeDebut());
+        }
+
         return etudiantMapper.toDto(savedEtudiant);
     }
 
@@ -58,9 +69,9 @@ public class EtudiantService {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
-                // Colonnes : 0=id, 1=mail, 2=nom, 3=prenom, 4=nom_promotion, 5=lv2
-                Cell mailCell = row.getCell(1);
-                Cell nomCell  = row.getCell(2);
+                // Colonnes: 0=id, 1=mail, 2=nom, 3=prenom, 4=nom_promotion, 5=lv2, 6=annee_debut
+                Cell mailCell   = row.getCell(1);
+                Cell nomCell    = row.getCell(2);
                 Cell prenomCell = row.getCell(3);
                 if (mailCell == null || nomCell == null || prenomCell == null) continue;
 
@@ -69,25 +80,31 @@ public class EtudiantService {
                 etudiant.setNom(nomCell.getStringCellValue());
                 etudiant.setPrenom(prenomCell.getStringCellValue());
 
-                // nom_promotion (colonne 4) — texte
-                Cell promotionCell = row.getCell(4);
-                if (promotionCell != null) {
-                    if (promotionCell.getCellType() == CellType.STRING) {
-                        lierEtudiantAPromotionParNom(etudiant, promotionCell.getStringCellValue());
-                    } else if (promotionCell.getCellType() == CellType.NUMERIC) {
-                        // Compatibilite ancienne version (promotion_id)
-                        Long promotionId = (long) promotionCell.getNumericCellValue();
-                        lierEtudiantAPromotionParId(etudiant, promotionId);
-                    }
-                }
-
                 // lv2 (colonne 5)
                 Cell lv2Cell = row.getCell(5);
                 if (lv2Cell != null) {
                     etudiant.setLv2(lv2Cell.getStringCellValue());
                 }
 
-                etudiantRepository.save(etudiant);
+                Etudiant savedEtudiant = etudiantRepository.save(etudiant);
+
+                // annee_debut (colonne 6)
+                String anneeDebut = null;
+                Cell anneeCell = row.getCell(6);
+                if (anneeCell != null && anneeCell.getCellType() == CellType.STRING) {
+                    anneeDebut = anneeCell.getStringCellValue();
+                }
+
+                // nom_promotion (colonne 4)
+                Cell promotionCell = row.getCell(4);
+                if (promotionCell != null) {
+                    if (promotionCell.getCellType() == CellType.STRING) {
+                        lierEtudiantAPromotionParNom(savedEtudiant, promotionCell.getStringCellValue(), anneeDebut);
+                    } else if (promotionCell.getCellType() == CellType.NUMERIC) {
+                        Long promotionId = (long) promotionCell.getNumericCellValue();
+                        lierEtudiantAPromotionParId(savedEtudiant, promotionId, anneeDebut);
+                    }
+                }
             }
 
         } catch (Exception e) {
@@ -97,50 +114,53 @@ public class EtudiantService {
 
     public List<EtudiantDTO> rechercherParPrenom(String prenom) {
         return etudiantRepository.findByPrenomContainingIgnoreCase(prenom)
-            .stream()
-            .map(etudiantMapper::toDto)
-            .collect(Collectors.toList());
+                .stream()
+                .map(etudiantMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     public EtudiantDTO rechercherParMail(String mail) {
         Optional<Etudiant> etudiantOpt = etudiantRepository.findByMailIgnoreCase(mail);
-        if (etudiantOpt.isEmpty()) {
-            return null;
-        }
-
-        return etudiantMapper.toDto(etudiantOpt.get());
+        return etudiantOpt.map(etudiantMapper::toDto).orElse(null);
     }
 
-    private void lierEtudiantAPromotionParNom(Etudiant etudiant, String nomPromotion) {
-        if (nomPromotion == null || nomPromotion.isBlank()) {
-            return;
-        }
+    // ---- private helpers ----
 
-        promotionRepository.findByNomPromotion(nomPromotion.trim())
-            .ifPresent(promotion -> ajouterEtudiantDansPromotion(etudiant, promotion));
+    private boolean lierEtudiantAPromotionParNom(Etudiant etudiant, String nomPromotion, String anneeDebut) {
+        if (nomPromotion == null || nomPromotion.isBlank()) return false;
+
+        Optional<eval.entity.Promotion> promotionOpt = promotionRepository.findByNomPromotion(nomPromotion.trim());
+        if (promotionOpt.isEmpty()) return false;
+
+        creerInscription(etudiant, promotionOpt.get().getId(), anneeDebut);
+        return true;
     }
 
-    private void lierEtudiantAPromotionParId(Etudiant etudiant, Long promotionId) {
-        if (promotionId == null) {
-            return;
-        }
+    private void lierEtudiantAPromotionParId(Etudiant etudiant, Long promotionId, String anneeDebut) {
+        if (promotionId == null) return;
 
         promotionRepository.findById(promotionId)
-            .ifPresent(promotion -> ajouterEtudiantDansPromotion(etudiant, promotion));
+                .ifPresent(promotion -> creerInscription(etudiant, promotion.getId(), anneeDebut));
     }
 
-    private void ajouterEtudiantDansPromotion(Etudiant etudiant, eval.entity.Promotion promotion) {
-        etudiant.setPromotion(promotion);
+    private void creerInscription(Etudiant etudiant, Long promotionId, String anneeDebut) {
+        // Avoid duplicates
+        boolean dejaPresent = inscriptionPromotionRepository
+                .existsByEtudiantIdAndPromotionId(etudiant.getId(), promotionId);
+        if (dejaPresent) return;
 
-        if (promotion.getListeEtudiants() == null) {
-            promotion.setListeEtudiants(new ArrayList<>());
+        InscriptionPromotion inscription = new InscriptionPromotion();
+        inscription.setEtudiant(etudiant);
+
+        promotionRepository.findById(promotionId)
+                .ifPresent(inscription::setPromotion);
+
+        // Find annee by anneeDebut string
+        if (anneeDebut != null && !anneeDebut.isBlank()) {
+            anneeRepository.findByAnneeDebut(anneeDebut.trim())
+                    .ifPresent(inscription::setAnnee);
         }
 
-        boolean dejaPresent = promotion.getListeEtudiants().stream()
-            .anyMatch(e -> e.getMail() != null && e.getMail().equalsIgnoreCase(etudiant.getMail()));
-
-        if (!dejaPresent) {
-            promotion.getListeEtudiants().add(etudiant);
-        }
+        inscriptionPromotionRepository.save(inscription);
     }
 }

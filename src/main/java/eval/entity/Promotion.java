@@ -25,7 +25,7 @@ public class Promotion {
     private String nomPromotion;
 
     @OneToMany(mappedBy = "promotion")
-    private List<Etudiant> listeEtudiants;
+    private List<InscriptionPromotion> inscriptions;
 
     @OneToMany(mappedBy = "promotion")
     private List<Semestre> semestres;
