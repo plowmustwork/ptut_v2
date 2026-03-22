@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface EnseignementRepository extends JpaRepository<Enseignement, Long> {
 
@@ -17,4 +18,6 @@ public interface EnseignementRepository extends JpaRepository<Enseignement, Long
         WHERE u.id_ue = :idUe
         """, nativeQuery = true)
     List<Enseignement> findByUe_IdUE(String idUe);
+
+    Optional<Enseignement> findByCode(String code);
 }

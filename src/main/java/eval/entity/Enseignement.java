@@ -1,5 +1,7 @@
 package eval.entity;
 
+import java.util.List;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -24,6 +26,9 @@ public class Enseignement {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "questionnaire_id")
     private Questionnaire questionnaire;
+
+    @ManyToMany(mappedBy = "enseignements")
+    private List<Enseignant> enseignants;
 
     public Long getId() {
         return id;
@@ -59,5 +64,13 @@ public class Enseignement {
 
     public void setQuestionnaire(Questionnaire questionnaire) {
         this.questionnaire = questionnaire;
+    }
+
+    public List<Enseignant> getEnseignants() {
+        return enseignants;
+    }
+
+    public void setEnseignants(List<Enseignant> enseignants) {
+        this.enseignants = enseignants;
     }
 }
