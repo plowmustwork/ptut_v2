@@ -91,8 +91,12 @@ public class EtudiantService {
                 // annee_debut (colonne 6)
                 String anneeDebut = null;
                 Cell anneeCell = row.getCell(6);
-                if (anneeCell != null && anneeCell.getCellType() == CellType.STRING) {
-                    anneeDebut = anneeCell.getStringCellValue();
+                if (anneeCell != null) {
+                    if (anneeCell.getCellType() == CellType.STRING) {
+                        anneeDebut = anneeCell.getStringCellValue().trim();
+                    } else if (anneeCell.getCellType() == CellType.NUMERIC) {
+                        anneeDebut = String.valueOf((long) anneeCell.getNumericCellValue()); // converts 2025.0 → "2025" ✅
+                    }
                 }
 
                 // nom_promotion (colonne 4)
@@ -144,7 +148,16 @@ public class EtudiantService {
     }
 
     private void creerInscription(Etudiant etudiant, Long promotionId, String anneeDebut) {
-        // Avoid duplicates
+    // Avoid duplicates per etudiant + promotion + annee
+        Optional<Annee> anneeOpt = Optional.empty();
+        if (anneeDebut != null && !anneeDebut.isBlank()) {
+            anneeOpt = anneeRepository.findByAnneeDebut(anneeDebut.trim());
+            if (anneeOpt.isEmpty()) {
+                System.err.println("Annee not found for anneeDebut: " + anneeDebut); // helps debug ✅
+                return; // don't create inscription without a valid annee
+            }
+        }
+
         boolean dejaPresent = inscriptionPromotionRepository
                 .existsByEtudiantIdAndPromotionId(etudiant.getId(), promotionId);
         if (dejaPresent) return;
@@ -155,11 +168,7 @@ public class EtudiantService {
         promotionRepository.findById(promotionId)
                 .ifPresent(inscription::setPromotion);
 
-        // Find annee by anneeDebut string
-        if (anneeDebut != null && !anneeDebut.isBlank()) {
-            anneeRepository.findByAnneeDebut(anneeDebut.trim())
-                    .ifPresent(inscription::setAnnee);
-        }
+        anneeOpt.ifPresent(inscription::setAnnee); // ✅ set the found annee
 
         inscriptionPromotionRepository.save(inscription);
     }
