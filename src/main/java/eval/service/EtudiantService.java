@@ -1,8 +1,8 @@
 package eval.service;
 import eval.dto.EtudiantDTO;
 import eval.entity.Etudiant;
-import eval.entity.Promotion;
 import eval.repository.EtudiantRepository;
+import eval.utility.EtudiantMapper;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,6 +11,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import eval.repository.PromotionRepository;
@@ -22,13 +23,13 @@ public class EtudiantService {
     private EtudiantRepository etudiantRepository;
     @Autowired
     private PromotionRepository promotionRepository;
+    @Autowired
+    private EtudiantMapper etudiantMapper;
 
 
     public EtudiantDTO trouverEtudiant(Long id){
         Etudiant etudiant = etudiantRepository.findById(id);
-        EtudiantDTO etudiantDTO = new EtudiantDTO();
-        etudiantDTO.EtudiantMapper(etudiant);
-        return etudiantDTO;
+        return etudiantMapper.toDto(etudiant);
     }
 
     public EtudiantDTO ajouterEtudiant(EtudiantDTO etudiantDTO){
@@ -91,11 +92,16 @@ public class EtudiantService {
     public List<EtudiantDTO> rechercherParPrenom(String prenom) {
         return etudiantRepository.findByPrenomContainingIgnoreCase(prenom)
             .stream()
-            .map(e -> {
-                EtudiantDTO dto = new EtudiantDTO();
-                dto.EtudiantMapper(e);
-                return dto;
-            })
+            .map(etudiantMapper::toDto)
             .collect(Collectors.toList());
+    }
+
+    public EtudiantDTO rechercherParMail(String mail) {
+        Optional<Etudiant> etudiantOpt = etudiantRepository.findByMailIgnoreCase(mail);
+        if (etudiantOpt.isEmpty()) {
+            return null;
+        }
+
+        return etudiantMapper.toDto(etudiantOpt.get());
     }
 }

@@ -4,17 +4,18 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.util.List;
 
-@Entity @Getter @Setter @ToString @NoArgsConstructor @AllArgsConstructor
+@Entity 
+@Getter @Setter @ToString @NoArgsConstructor @RequiredArgsConstructor
 public class Annee {
     @Id
     @Column(name = "annee_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idAnnee;
 
-    @NotNull
+    @NonNull
     private Integer dateDebut;
 
-    @NotNull
+    @NonNull
     private Integer dateFin;
 
     @ManyToMany

@@ -20,7 +20,7 @@ public class UeController {
         this.ueService = ueService;
     }
 
-    @PostMapping
+    @PostMapping("/creer")
     public ResponseEntity<UeDTO> creer(@RequestBody UeDTO dto) {
         return ResponseEntity.ok(ueService.creer(dto));
     }

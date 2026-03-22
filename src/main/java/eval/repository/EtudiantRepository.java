@@ -6,6 +6,7 @@ import org.springframework.data.rest.core.annotation.RestResource;
 
 import eval.entity.Etudiant;
 import java.util.List;
+import java.util.Optional;
 
 
 public interface EtudiantRepository extends JpaRepository<Etudiant, Integer> {
@@ -14,5 +15,7 @@ public interface EtudiantRepository extends JpaRepository<Etudiant, Integer> {
 
     @RestResource(path = "findByPrenom")                          // ✅ Nouveau
     List<Etudiant> findByPrenomContainingIgnoreCase(@Param("prenom") String prenom);
+
+    Optional<Etudiant> findByMailIgnoreCase(String mail);
     
 }
