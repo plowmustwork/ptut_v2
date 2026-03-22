@@ -15,7 +15,6 @@ import java.security.MessageDigest;
 
 public class Enseignant {
     @Id
-    @NotNull
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
