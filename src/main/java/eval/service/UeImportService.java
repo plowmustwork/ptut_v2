@@ -24,31 +24,37 @@ public class UeImportService {
     @Autowired
     private SemestreRepository semestreRepository;
 
-    public void importFromExcel(MultipartFile file, String nomPromotion, String nomSemestre, String anneeDebut) {
+    public void importFromExcel(MultipartFile file) {
         try (InputStream is = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(is)) {
 
-            // Find the semestre matching promotion + semestre name + annee
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Parse row 1 — "Promotion : FIE3  |  Semestre : S6  |  Année : 2025-2026"
+            String infoCell = sheet.getRow(0).getCell(0).getStringCellValue();
+            String[] infoParts = infoCell.split("\\|");  // renamed to infoParts ✅
+            String nomPromotion = infoParts[0].replace("Promotion :", "").trim();
+            String nomSemestre  = infoParts[1].replace("Semestre :", "").trim();
+            String anneeDebut   = infoParts[2].replace("Année :", "").trim().split("-")[0].trim();
+
             Semestre semestre = semestreRepository
                 .findByNomSemestreAndPromotionNomPromotionAndAnneeAnneeDebut(
                     nomSemestre, nomPromotion, anneeDebut)
                 .orElseThrow(() -> new RuntimeException(
                     "Semestre introuvable: " + nomSemestre + " / " + nomPromotion + " / " + anneeDebut));
 
-            Sheet sheet = workbook.getSheetAt(0);
-
             // Start at row 4 (index 3) — rows 1,2=info, 3=headers
             for (int i = 3; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
-                Cell idUeCell     = row.getCell(0);
-                Cell intituleCell = row.getCell(1);
+                Cell idUeCell          = row.getCell(0);
+                Cell intituleCell      = row.getCell(1);
                 Cell enseignementsCell = row.getCell(2);
 
                 if (idUeCell == null || intituleCell == null) continue;
 
-                String idUE    = idUeCell.getStringCellValue().trim();
+                String idUE     = idUeCell.getStringCellValue().trim();
                 String intitule = intituleCell.getStringCellValue().trim();
                 if (idUE.isBlank()) continue;
 
@@ -64,14 +70,14 @@ public class UeImportService {
                 String enseignementsRaw = enseignementsCell.getStringCellValue().trim();
                 if (enseignementsRaw.isBlank()) continue;
 
-                String[] parts = enseignementsRaw.split(";");
-                for (String part : parts) {
+                String[] enseignementsParts = enseignementsRaw.split(";");  // renamed ✅
+                for (String part : enseignementsParts) {
                     part = part.trim();
                     if (!part.contains("|")) continue;
 
-                    String[] split = part.split("\\|", 2);
-                    String code    = split[0].trim();
-                    String libelle = split[1].trim();
+                    String[] split  = part.split("\\|", 2);
+                    String code     = split[0].trim();
+                    String libelle  = split[1].trim();
 
                     // Avoid duplicates by code
                     boolean exists = ue.getEnseignements().stream()

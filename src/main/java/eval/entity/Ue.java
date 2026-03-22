@@ -22,8 +22,6 @@ public class Ue {
     @JoinColumn(name = "semestre_id")
     private Semestre semestre;
 
-    // ...existing code...
-
     public Semestre getSemestre() {
         return semestre;
     }
