@@ -10,6 +10,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -38,12 +39,13 @@ public class EtudiantService {
         etudiant.setPrenom(etudiantDTO.getPrenom());
         etudiant.setMail(etudiantDTO.getMail());
         etudiant.setLv2(etudiantDTO.getLv2());
-        if (etudiantDTO.getPromotionId() != null) {
-            promotionRepository.findById(etudiantDTO.getPromotionId())
-                .ifPresent(etudiant::setPromotion);
+        lierEtudiantAPromotionParNom(etudiant, etudiantDTO.getPromotionNom());
+        if (etudiant.getPromotion() == null) {
+            lierEtudiantAPromotionParId(etudiant, etudiantDTO.getPromotionId());
         }
-        etudiantRepository.save(etudiant);
-        return etudiantDTO;
+
+        Etudiant savedEtudiant = etudiantRepository.save(etudiant);
+        return etudiantMapper.toDto(savedEtudiant);
     }
 
     public void importEtudiantsFromExcel(MultipartFile file) {
@@ -56,7 +58,7 @@ public class EtudiantService {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
-                // Colonnes : 0=id, 1=mail, 2=nom, 3=prenom, 4=promotion_id, 5=lv2
+                // Colonnes : 0=id, 1=mail, 2=nom, 3=prenom, 4=nom_promotion, 5=lv2
                 Cell mailCell = row.getCell(1);
                 Cell nomCell  = row.getCell(2);
                 Cell prenomCell = row.getCell(3);
@@ -67,12 +69,16 @@ public class EtudiantService {
                 etudiant.setNom(nomCell.getStringCellValue());
                 etudiant.setPrenom(prenomCell.getStringCellValue());
 
-                // promotion_id (colonne 4) — numérique
+                // nom_promotion (colonne 4) — texte
                 Cell promotionCell = row.getCell(4);
-                if (promotionCell != null && promotionCell.getCellType() == CellType.NUMERIC) {
-                    Long promotionId = (long) promotionCell.getNumericCellValue();
-                    promotionRepository.findById(promotionId)
-                        .ifPresent(etudiant::setPromotion);
+                if (promotionCell != null) {
+                    if (promotionCell.getCellType() == CellType.STRING) {
+                        lierEtudiantAPromotionParNom(etudiant, promotionCell.getStringCellValue());
+                    } else if (promotionCell.getCellType() == CellType.NUMERIC) {
+                        // Compatibilite ancienne version (promotion_id)
+                        Long promotionId = (long) promotionCell.getNumericCellValue();
+                        lierEtudiantAPromotionParId(etudiant, promotionId);
+                    }
                 }
 
                 // lv2 (colonne 5)
@@ -103,5 +109,38 @@ public class EtudiantService {
         }
 
         return etudiantMapper.toDto(etudiantOpt.get());
+    }
+
+    private void lierEtudiantAPromotionParNom(Etudiant etudiant, String nomPromotion) {
+        if (nomPromotion == null || nomPromotion.isBlank()) {
+            return;
+        }
+
+        promotionRepository.findByNomPromotion(nomPromotion.trim())
+            .ifPresent(promotion -> ajouterEtudiantDansPromotion(etudiant, promotion));
+    }
+
+    private void lierEtudiantAPromotionParId(Etudiant etudiant, Long promotionId) {
+        if (promotionId == null) {
+            return;
+        }
+
+        promotionRepository.findById(promotionId)
+            .ifPresent(promotion -> ajouterEtudiantDansPromotion(etudiant, promotion));
+    }
+
+    private void ajouterEtudiantDansPromotion(Etudiant etudiant, eval.entity.Promotion promotion) {
+        etudiant.setPromotion(promotion);
+
+        if (promotion.getListeEtudiants() == null) {
+            promotion.setListeEtudiants(new ArrayList<>());
+        }
+
+        boolean dejaPresent = promotion.getListeEtudiants().stream()
+            .anyMatch(e -> e.getMail() != null && e.getMail().equalsIgnoreCase(etudiant.getMail()));
+
+        if (!dejaPresent) {
+            promotion.getListeEtudiants().add(etudiant);
+        }
     }
 }
