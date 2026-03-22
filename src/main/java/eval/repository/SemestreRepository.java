@@ -3,10 +3,16 @@ package eval.repository;
 import eval.entity.Semestre;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface SemestreRepository extends JpaRepository<Semestre, Long> {
+
     Optional<Semestre> findByNomSemestreAndPromotionNomPromotionAndAnneeAnneeDebut(
         String nomSemestre, String nomPromotion, String anneeDebut);
+
+    // Get all semestres for a promotion + anneeDebut ✅
+    List<Semestre> findByPromotionNomPromotionAndAnneeAnneeDebut(
+        String nomPromotion, String anneeDebut);
 }

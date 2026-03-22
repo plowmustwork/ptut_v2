@@ -48,4 +48,13 @@ public class EtudiantController {
         }
         return ResponseEntity.ok(resultats);
     }
+
+    @GetMapping("/mail")
+    public ResponseEntity<EtudiantDTO> rechercherParMail(@RequestParam String mail) {
+        EtudiantDTO etudiant = etudiantService.rechercherParMail(mail);
+        if (etudiant == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(etudiant);
+    }
 }
