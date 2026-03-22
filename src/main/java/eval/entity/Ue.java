@@ -12,13 +12,13 @@ public class Ue {
     @Column(name = "id_ue", nullable = false, length = 50)
     private String idUE;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, length = 500)
     private String intitule;
 
     @OneToMany(mappedBy = "ue", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Enseignement> enseignements = new ArrayList<>();
 
-        @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "semestre_id")
     private Semestre semestre;
 
