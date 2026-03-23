@@ -3,9 +3,11 @@ package eval.entity;
 import java.util.List;
 
 import jakarta.persistence.*;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "enseignement")
+@EqualsAndHashCode(of = "code")
 public class Enseignement {
 
     @Id

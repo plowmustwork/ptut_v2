@@ -12,7 +12,7 @@ import java.security.MessageDigest;
 
 @Entity
 @Getter @Setter @NoArgsConstructor  @RequiredArgsConstructor @ToString
-
+@EqualsAndHashCode(of = "mail")
 public class Enseignant {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

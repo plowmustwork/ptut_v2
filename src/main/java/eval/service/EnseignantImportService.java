@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class EnseignantImportService {
@@ -27,41 +29,60 @@ public class EnseignantImportService {
     }
 
     public void importFromExcel(MultipartFile file) throws IOException {
-    try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
-        Sheet sheet = workbook.getSheetAt(0);
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
 
-        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-            Row row = sheet.getRow(i);
-            if (row == null) continue;
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
 
-            String mail   = getCellValue(row, 0);
-            String nom    = getCellValue(row, 1);
-            String prenom = getCellValue(row, 2);
-            String codesRaw = getCellValue(row, 3); // colonne D maintenant
+                String mail     = getCellValue(row, 0);
+                String nom      = getCellValue(row, 1);
+                String prenom   = getCellValue(row, 2);
+                String codesRaw = getCellValue(row, 3);
 
-            Enseignant enseignant = new Enseignant();
-            enseignant.setMail(mail);
-            enseignant.setNom(nom);
-            enseignant.setPrenom(prenom);
+                // Récupérer l'enseignant existant ou en créer un nouveau
+                Enseignant enseignant = enseignantRepository.findByMail(mail)
+                        .orElse(new Enseignant());
 
-            List<Enseignement> enseignements = new ArrayList<>();
-            if (codesRaw != null && !codesRaw.isBlank()) {
-                Arrays.stream(codesRaw.split(","))
-                      .map(String::trim)
-                      .filter(code -> !code.isEmpty())
-                      .forEach(code -> enseignementRepository
-                          .findByCode(code)
-                          .ifPresentOrElse(
-                              enseignements::add,
-                              () -> System.err.println("Code inconnu ignoré : " + code)
-                          ));
+                enseignant.setMail(mail);
+                enseignant.setNom(nom);
+                enseignant.setPrenom(prenom);
+
+                // Récupérer les enseignements depuis le fichier
+                List<Enseignement> nouvellesEnseignements = new ArrayList<>();
+                if (codesRaw != null && !codesRaw.isBlank()) {
+                    Arrays.stream(codesRaw.split(","))
+                          .map(String::trim)
+                          .filter(code -> !code.isEmpty())
+                          .forEach(code -> enseignementRepository
+                              .findByCode(code)
+                              .ifPresentOrElse(
+                                  nouvellesEnseignements::add,
+                                  () -> System.err.println("Code inconnu ignoré : " + code)
+                              ));
+                }
+
+                // Fusionner avec les enseignements existants sans doublons
+                List<Enseignement> existing = enseignant.getEnseignements() != null
+                        ? new ArrayList<>(enseignant.getEnseignements())
+                        : new ArrayList<>();
+
+                Set<String> existingCodes = existing.stream()
+                        .map(Enseignement::getCode)
+                        .collect(Collectors.toSet());
+
+                for (Enseignement e : nouvellesEnseignements) {
+                    if (!existingCodes.contains(e.getCode())) {
+                        existing.add(e);
+                    }
+                }
+
+                enseignant.setEnseignements(existing);
+                enseignantRepository.save(enseignant);
             }
-            enseignant.setEnseignements(enseignements);
-            enseignantRepository.save(enseignant);
         }
     }
-}
-    
 
     private String getCellValue(Row row, int col) {
         Cell cell = row.getCell(col, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);

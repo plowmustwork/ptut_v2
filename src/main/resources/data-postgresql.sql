@@ -1,4 +1,9 @@
--- Data for testing
+
+-- Annee
+INSERT INTO annee (annee_debut, annee_fin) VALUES
+('2023', '2024'),
+('2024', '2025'),
+('2025', '2026');
 
 -- Promotion
 INSERT INTO promotion (nom_promotion) VALUES 
@@ -11,31 +16,28 @@ INSERT INTO promotion (nom_promotion) VALUES
 ('FIE5'),
 ('FIA5');
 
--- Reset sequence for promotion (8 rows inserted)
-SELECT setval('promotion_promotion_id_seq', (SELECT MAX(promotion_id) FROM promotion));
-
--- Annee
-INSERT INTO annee (date_debut, date_fin) VALUES
-(2023, 2024),
-(2024, 2025),
-(2025, 2026);
-
--- Reset sequence for annee (3 rows inserted)
-SELECT setval('annee_annee_id_seq', (SELECT MAX(annee_id) FROM annee));
-
 INSERT INTO annee_promotion (annee_id, promotion_id) VALUES
-(1, 1),
-(1, 2),
-(1, 3),
-(1, 4),
-(1, 5),
-(1, 6),
-(1, 7),
-(1, 8);
+(1, 1),  -- FIE1 -> 2023-2024
+(1, 2),  -- FIE2 -> 2023-2024
+(1, 3),  -- FIE3 -> 2023-2024
+(1, 4),  -- FIA3 -> 2023-2024
+(1, 5),  -- FIE4 -> 2023-2024
+(1, 6),  -- FIA4 -> 2023-2024
+(1, 7),  -- FIE5 -> 2023-2024
+(1, 8),  -- FIA5 -> 2023-2024
+(2, 3),  -- FIE3 -> 2024-2025 
+(3, 3);  -- FIE3 -> 2025-2026 
 
--- Enseignant
-INSERT INTO enseignant (mail, nom, prenom, mot_de_passe) VALUES 
-('testing@univ.fr', 'Doe', 'John', 'hashed_password_1');
-
--- Reset sequence for enseignant (1 row inserted)
-SELECT setval('enseignant_enseignant_id_seq', (SELECT MAX(enseignant_id) FROM enseignant));
+INSERT INTO semestre (nom_semestre, promotion_id, annee_id) VALUES
+('S1', 1, 1),  -- FIE1 -> 2023-2024
+('S2', 1, 1),  -- FIE1 -> 2023-2024
+('S3', 2, 1),  -- FIE2 -> 2023-2024
+('S4', 2, 1),  -- FIE2 -> 2023-2024
+('S5', 3, 2),  -- FIE3 -> 2024-2025 
+('S6', 3, 2),  -- FIE3 -> 2024-2025 
+('S5', 3, 3),  -- FIE3 -> 2025-2026 
+('S6', 3, 3),  -- FIE3 -> 2025-2026 
+('S5', 4, 2),  -- FIA3 -> 2024-2025
+('S6', 4, 2),  -- FIA3 -> 2024-2025
+('S5', 4, 3),  -- FIA3 -> 2025-2026
+('S6', 4, 3);  -- FIA3 -> 2025-2026
